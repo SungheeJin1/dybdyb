@@ -45,8 +45,14 @@ async function run(cfg, { dryRun, verbose }) {
   const now = new Date().toISOString();
   await mkdir('debug', { recursive: true }).catch(() => {});
 
+  // 같은 비밀번호로 이미 로그인에 실패했다면 다시 시도하지 않습니다(틀린 비밀번호로 10분마다 로그인 시도 방지).
+  const pwHash = cfg.password ? createHash('sha256').update(`${cfg.email}\n${cfg.password}`).digest('hex').slice(0, 16) : null;
+  const skipPasswordLogin = pwHash && state.badPasswordHash === pwHash;
+  const siteCfg = skipPasswordLogin ? { ...cfg, password: '' } : cfg;
+  if (skipPasswordLogin) log.warn('지난번에 틀린 이메일/비밀번호라 이번에는 이메일 로그인을 시도하지 않습니다. Secret을 고치면 다시 시도합니다.');
+
   try {
-    const { submissions, storageState } = await fetchSubmissions(cfg, {
+    const { submissions, storageState } = await fetchSubmissions(siteCfg, {
       storageState: startingSession(cfg, state),
       log,
       debugDir: 'debug',
@@ -88,10 +94,14 @@ async function run(cfg, { dryRun, verbose }) {
     state.seen = pruneSeen(state.seen, matches.map(submissionKey));
     state.lastErrorNotifiedAt = null;
     state.failures = 0;
+    state.badPasswordHash = null;
     if (fresh.length) log.info(`푸시 ${fresh.length}건 전송 완료`);
   } catch (err) {
     state.failures = (state.failures || 0) + 1;
-    if (err instanceof LoginError) state.storageState = null; // 만료된 세션은 버림
+    if (err instanceof LoginError) {
+      state.storageState = null; // 만료된 세션은 버림
+      if (err.badCredentials && pwHash) state.badPasswordHash = pwHash;
+    }
     if (!dryRun) await notifyErrorThrottled(cfg, state, err, now);
     throw err;
   } finally {
