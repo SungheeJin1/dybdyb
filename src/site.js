@@ -136,7 +136,9 @@ async function login(page, app, cfg, log) {
     const err = page.locator(SEL.loginError).filter({ hasText: /\S/ });
     if (await err.count()) {
       const msg = ((await err.first().innerText().catch(() => '')) || '').trim();
-      throw new LoginError(`로그인 실패: ${msg || '이메일 또는 비밀번호를 확인하세요.'}`);
+      const e = new LoginError(`로그인 실패: ${msg || '이메일 또는 비밀번호를 확인하세요.'}`);
+      e.badCredentials = true;
+      throw e;
     }
     // 보이지 않는 reCAPTCHA가 '그림 고르기' 확인을 요구하면 자동 로그인은 진행할 수 없습니다.
     if (await page.locator('iframe[src*="recaptcha"][src*="bframe"]').first().isVisible().catch(() => false)) {
@@ -185,7 +187,9 @@ export async function fetchSubmissions(cfg, { storageState = null, log = console
     if (!(await detectLogin(app))) {
       if (!cfg.email || !cfg.password) {
         throw new LoginError(
-          '사이트 로그인이 풀렸습니다. PC에서 다시 로그인한 뒤 cookie 값을 복사해 WIX_COOKIES Secret을 새로 넣어 주세요.',
+          cfg.email
+            ? '로그인할 수 없습니다. WIX_PASSWORD가 틀렸습니다(고치기 전까지 이메일 로그인은 다시 시도하지 않음). 비밀번호를 고치거나 WIX_COOKIES를 넣어 주세요.'
+            : '사이트 로그인이 풀렸습니다. PC에서 다시 로그인한 뒤 cookie 값을 복사해 WIX_COOKIES Secret을 새로 넣어 주세요.',
         );
       }
       await login(page, app, cfg, log);
