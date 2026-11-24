@@ -11,7 +11,7 @@ import { mkdir } from 'node:fs/promises';
 import { loadConfig, missingSettings } from './config.js';
 import { parseCookies } from './cookies.js';
 import { findNew, selectMatches, submissionKey } from './match.js';
-import { formatDigest, formatSubmission, sendNtfy } from './notify.js';
+import { formatDigest, formatSubmission, sendPush } from './notify.js';
 import { LoginError, fetchSubmissions } from './site.js';
 import { loadState, pruneSeen, saveState } from './state.js';
 
@@ -28,7 +28,7 @@ const MAX_SEPARATE_PUSHES = 5;
 async function testNotify(cfg) {
   const missing = missingSettings(cfg, { needSite: false });
   if (missing.length) throw new Error(`설정이 비어 있습니다: ${missing.join(', ')}`);
-  await sendNtfy(cfg.ntfy, {
+  await sendPush(cfg, {
     title: '테스트 알림',
     message: '학생 제출 알림이 이 기기로 잘 도착합니다.',
     tags: ['white_check_mark'],
@@ -68,7 +68,7 @@ async function run(cfg, { dryRun, verbose }) {
     if (firstRun && !cfg.notifyExisting) {
       for (const s of matches) state.seen[submissionKey(s)] = now;
       state.initializedAt = now;
-      await sendNtfy(cfg.ntfy, {
+      await sendPush(cfg, {
         title: '학생 제출 알림 시작',
         message: `대상 ${cfg.targets.length}명 감시를 시작합니다. 지금 목록에 있는 제출 ${matches.length}건은 알림 없이 기록했고, 앞으로 새로 제출하면 알려드립니다.`,
         tags: ['white_check_mark'],
@@ -76,11 +76,11 @@ async function run(cfg, { dryRun, verbose }) {
         click: cfg.siteUrl,
       });
     } else if (fresh.length > MAX_SEPARATE_PUSHES) {
-      await sendNtfy(cfg.ntfy, formatDigest(fresh, cfg.siteUrl));
+      await sendPush(cfg, formatDigest(fresh, cfg.siteUrl));
       for (const s of fresh) state.seen[submissionKey(s)] = now;
     } else {
       for (const s of fresh) {
-        await sendNtfy(cfg.ntfy, formatSubmission(s, cfg.siteUrl));
+        await sendPush(cfg, formatSubmission(s, cfg.siteUrl));
         state.seen[submissionKey(s)] = now; // 보낸 것만 기록 → 실패하면 다음 실행에서 다시 시도
       }
     }
@@ -114,12 +114,12 @@ function startingSession(cfg, state) {
 // 일시적인 오류 한 번으로는 알리지 않고, 로그인 실패이거나 2번 연속 실패하면 알립니다.
 // 계속 실패하는 동안에는 몇 시간(ERROR_NOTIFY_HOURS)에 한 번만 알립니다.
 async function notifyErrorThrottled(cfg, state, err, now) {
-  if (!cfg.ntfy.topic) return;
+  if (!cfg.ntfy.topic && !cfg.bark.key) return;
   if (!(err instanceof LoginError) && state.failures < 2) return;
   const last = state.lastErrorNotifiedAt ? Date.parse(state.lastErrorNotifiedAt) : 0;
   if (Date.now() - last < cfg.errorNotifyHours * 3600 * 1000) return;
   try {
-    await sendNtfy(cfg.ntfy, {
+    await sendPush(cfg, {
       title: '학생 제출 알림 오류',
       message: `확인 중 문제가 생겼습니다: ${err.message}\nGitHub Actions 실행 기록을 확인하세요.`,
       tags: ['warning'],
