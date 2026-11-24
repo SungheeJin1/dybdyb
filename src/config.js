@@ -15,6 +15,8 @@ export function splitList(value) {
 export function loadConfig(env = process.env) {
   return {
     siteUrl: (env.SITE_URL || DEFAULT_SITE_URL).trim(),
+    // 알림을 눌렀을 때 열 주소. 기본은 iPhone에서 기본 브라우저와 상관없이 Safari로 여는 x-safari-https:// 주소.
+    clickUrl: (env.CLICK_URL || `x-safari-${(env.SITE_URL || DEFAULT_SITE_URL).trim()}`).trim(),
     // 로그인 방법 1: 이메일 + 비밀번호 (자동 로그인)
     email: (env.WIX_EMAIL || '').trim(),
     password: env.WIX_PASSWORD || '',

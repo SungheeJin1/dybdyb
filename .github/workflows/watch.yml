@@ -64,6 +64,7 @@ jobs:
           WATCH_STATUSES: ${{ vars.WATCH_STATUSES }}
           NOTIFY_EXISTING: ${{ vars.NOTIFY_EXISTING }}
           SITE_URL: ${{ vars.SITE_URL }}
+          CLICK_URL: ${{ vars.CLICK_URL }}
           # GitHub 실행 환경에 이미 설치된 Chrome을 씁니다(브라우저 다운로드 시간 절약).
           BROWSER_CHANNEL: chrome
         run: |

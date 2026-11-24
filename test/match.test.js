@@ -85,6 +85,8 @@ test('설정 읽기와 누락 확인', () => {
   const cfg = loadConfig({ TARGET_NAMES: '홍길동, 2026-102\n김철수', NTFY_TOPIC: 't', WIX_EMAIL: 'a@b.c', WIX_PASSWORD: 'p' });
   assert.deepEqual(cfg.targets, ['홍길동', '2026-102', '김철수']);
   assert.deepEqual(cfg.statuses, ['SUBMITTED']);
+  assert.equal(cfg.clickUrl, 'x-safari-https://consultingdyb.wixstudio.com/interview');
+  assert.equal(loadConfig({ CLICK_URL: 'https://a.b' }).clickUrl, 'https://a.b');
   assert.deepEqual(missingSettings(cfg), []);
   assert.deepEqual(missingSettings(loadConfig({})), ['BARK_KEY 또는 NTFY_TOPIC', 'WIX_COOKIES (또는 WIX_EMAIL + WIX_PASSWORD)', 'TARGET_NAMES']);
   // Google 로그인 계정: 쿠키만 있어도 됨
