@@ -30,10 +30,12 @@ export function loadConfig(env = process.env) {
       token: (env.NTFY_TOKEN || '').trim(),
       priority: Number(env.NTFY_PRIORITY || 4),
     },
+    // Bark(iOS 전용 푸시 앱). 앱 첫 화면의 주소(https://api.day.app/키/...) 또는 키만 넣어도 됩니다.
+    bark: parseBark(env.BARK_KEY, env.BARK_SERVER),
     statePath: env.STATE_PATH || '.state/state.bin',
     // 저장 상태(로그인 세션 포함)를 암호화하는 키. 따로 없으면 WIX_PASSWORD, 그것도 없으면
     // NTFY_TOPIC(둘 다 Secret이라 공개 저장소에서도 밖에서 알 수 없음)으로 만듭니다.
-    stateSecret: env.STATE_SECRET || env.WIX_PASSWORD || env.NTFY_TOPIC || '',
+    stateSecret: env.STATE_SECRET || env.WIX_PASSWORD || env.NTFY_TOPIC || env.BARK_KEY || '',
     notifyExisting: truthy(env.NOTIFY_EXISTING),
     errorNotifyHours: Number(env.ERROR_NOTIFY_HOURS || 6),
     browser: {
@@ -44,11 +46,19 @@ export function loadConfig(env = process.env) {
   };
 }
 
+export function parseBark(value, server) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return { server: '', key: '' };
+  const m = raw.match(/^(https?:\/\/[^/]+)\/([^/?#]+)/);
+  if (m) return { server: (server || m[1]).replace(/\/+$/, ''), key: m[2] };
+  return { server: (server || 'https://api.day.app').trim().replace(/\/+$/, ''), key: raw };
+}
+
 export const KNOWN_STATUSES = ['SUBMITTED', 'REVISION_REQUESTED', 'FEEDBACK_READY', 'COMPLETED'];
 
 export function missingSettings(cfg, { needSite = true } = {}) {
   const missing = [];
-  if (!cfg.ntfy.topic) missing.push('NTFY_TOPIC');
+  if (!cfg.ntfy.topic && !cfg.bark.key) missing.push('BARK_KEY 또는 NTFY_TOPIC');
   if (needSite) {
     if (!cfg.cookies && !(cfg.email && cfg.password)) missing.push('WIX_COOKIES (또는 WIX_EMAIL + WIX_PASSWORD)');
     if (!cfg.targets.length) missing.push('TARGET_NAMES');

@@ -86,7 +86,7 @@ test('설정 읽기와 누락 확인', () => {
   assert.deepEqual(cfg.targets, ['홍길동', '2026-102', '김철수']);
   assert.deepEqual(cfg.statuses, ['SUBMITTED']);
   assert.deepEqual(missingSettings(cfg), []);
-  assert.deepEqual(missingSettings(loadConfig({})), ['NTFY_TOPIC', 'WIX_COOKIES (또는 WIX_EMAIL + WIX_PASSWORD)', 'TARGET_NAMES']);
+  assert.deepEqual(missingSettings(loadConfig({})), ['BARK_KEY 또는 NTFY_TOPIC', 'WIX_COOKIES (또는 WIX_EMAIL + WIX_PASSWORD)', 'TARGET_NAMES']);
   // Google 로그인 계정: 쿠키만 있어도 됨
   assert.deepEqual(missingSettings(loadConfig({ NTFY_TOPIC: 't', TARGET_NAMES: 'x', WIX_COOKIES: 'a=b' })), []);
   // 암호화 키: STATE_SECRET > WIX_PASSWORD > NTFY_TOPIC
