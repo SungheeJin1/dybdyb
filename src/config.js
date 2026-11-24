@@ -15,8 +15,11 @@ export function splitList(value) {
 export function loadConfig(env = process.env) {
   return {
     siteUrl: (env.SITE_URL || DEFAULT_SITE_URL).trim(),
+    // 로그인 방법 1: 이메일 + 비밀번호 (자동 로그인)
     email: (env.WIX_EMAIL || '').trim(),
     password: env.WIX_PASSWORD || '',
+    // 로그인 방법 2: 브라우저에서 복사한 로그인 쿠키 (Google 계정으로만 로그인하는 경우)
+    cookies: (env.WIX_COOKIES || '').trim(),
     // 이름 또는 학생 번호(예: 2026-101). 쉼표나 줄바꿈으로 여러 명.
     targets: splitList(env.TARGET_NAMES),
     // 알림 대상 검토 상태. 기본은 '제출 완료(피드백 대기 중)'.
@@ -28,8 +31,9 @@ export function loadConfig(env = process.env) {
       priority: Number(env.NTFY_PRIORITY || 4),
     },
     statePath: env.STATE_PATH || '.state/state.bin',
-    // 저장 상태(로그인 세션 포함)를 암호화하는 키. 따로 없으면 WIX_PASSWORD로 만듭니다.
-    stateSecret: env.STATE_SECRET || env.WIX_PASSWORD || '',
+    // 저장 상태(로그인 세션 포함)를 암호화하는 키. 따로 없으면 WIX_PASSWORD, 그것도 없으면
+    // NTFY_TOPIC(둘 다 Secret이라 공개 저장소에서도 밖에서 알 수 없음)으로 만듭니다.
+    stateSecret: env.STATE_SECRET || env.WIX_PASSWORD || env.NTFY_TOPIC || '',
     notifyExisting: truthy(env.NOTIFY_EXISTING),
     errorNotifyHours: Number(env.ERROR_NOTIFY_HOURS || 6),
     browser: {
@@ -46,8 +50,7 @@ export function missingSettings(cfg, { needSite = true } = {}) {
   const missing = [];
   if (!cfg.ntfy.topic) missing.push('NTFY_TOPIC');
   if (needSite) {
-    if (!cfg.email) missing.push('WIX_EMAIL');
-    if (!cfg.password) missing.push('WIX_PASSWORD');
+    if (!cfg.cookies && !(cfg.email && cfg.password)) missing.push('WIX_COOKIES (또는 WIX_EMAIL + WIX_PASSWORD)');
     if (!cfg.targets.length) missing.push('TARGET_NAMES');
     const bad = cfg.statuses.filter((s) => s !== 'ALL' && !KNOWN_STATUSES.includes(s));
     if (bad.length) missing.push(`WATCH_STATUSES(알 수 없는 값: ${bad.join(', ')})`);

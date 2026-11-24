@@ -6,8 +6,10 @@
 //   node src/index.js --dry-run --verbose   일치한 제출 내용까지 출력(개인 PC에서만 쓰세요)
 //   node src/index.js --test-notify   테스트 푸시 한 건만 보냄
 
+import { createHash } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import { loadConfig, missingSettings } from './config.js';
+import { parseCookies } from './cookies.js';
 import { findNew, selectMatches, submissionKey } from './match.js';
 import { formatDigest, formatSubmission, sendNtfy } from './notify.js';
 import { LoginError, fetchSubmissions } from './site.js';
@@ -45,7 +47,7 @@ async function run(cfg, { dryRun, verbose }) {
 
   try {
     const { submissions, storageState } = await fetchSubmissions(cfg, {
-      storageState: state.storageState,
+      storageState: startingSession(cfg, state),
       log,
       debugDir: 'debug',
     });
@@ -95,6 +97,18 @@ async function run(cfg, { dryRun, verbose }) {
   } finally {
     if (!dryRun) await saveState(cfg.statePath, cfg.stateSecret, state);
   }
+}
+
+// 지난 실행에서 저장한 세션을 씁니다. WIX_COOKIES를 처음 넣었거나 새 값으로 바꿨으면 그 쿠키로 시작합니다.
+function startingSession(cfg, state) {
+  if (!cfg.cookies) return state.storageState;
+  const hash = createHash('sha256').update(cfg.cookies).digest('hex').slice(0, 16);
+  if (state.storageState && state.cookieSecretHash === hash) return state.storageState;
+  const cookies = parseCookies(cfg.cookies, cfg.siteUrl);
+  if (!cookies.length) throw new Error('WIX_COOKIES 값에서 쿠키를 읽지 못했습니다. 복사한 값을 다시 확인하세요.');
+  log.info(`WIX_COOKIES에서 쿠키 ${cookies.length}개를 불러왔습니다.`);
+  state.cookieSecretHash = hash;
+  return { cookies, origins: [] };
 }
 
 // 일시적인 오류 한 번으로는 알리지 않고, 로그인 실패이거나 2번 연속 실패하면 알립니다.

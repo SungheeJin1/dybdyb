@@ -8,7 +8,7 @@ import { dirname } from 'node:path';
 const MAGIC = Buffer.from('DYBW1');
 
 export function emptyState() {
-  return { version: 1, initializedAt: null, seen: {}, storageState: null, lastErrorNotifiedAt: null, failures: 0 };
+  return { version: 1, initializedAt: null, seen: {}, storageState: null, lastErrorNotifiedAt: null, failures: 0, cookieSecretHash: null };
 }
 
 function deriveKey(secret, salt) {

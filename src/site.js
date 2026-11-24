@@ -183,6 +183,11 @@ export async function fetchSubmissions(cfg, { storageState = null, log = console
 
     let loggedInFresh = false;
     if (!(await detectLogin(app))) {
+      if (!cfg.email || !cfg.password) {
+        throw new LoginError(
+          '사이트 로그인이 풀렸습니다. PC에서 다시 로그인한 뒤 cookie 값을 복사해 WIX_COOKIES Secret을 새로 넣어 주세요.',
+        );
+      }
       await login(page, app, cfg, log);
       loggedInFresh = true;
     } else {
