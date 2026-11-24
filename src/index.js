@@ -104,7 +104,7 @@ function startingSession(cfg, state) {
   if (!cfg.cookies) return state.storageState;
   const hash = createHash('sha256').update(cfg.cookies).digest('hex').slice(0, 16);
   if (state.storageState && state.cookieSecretHash === hash) return state.storageState;
-  const cookies = parseCookies(cfg.cookies, cfg.clickUrl);
+  const cookies = parseCookies(cfg.cookies, cfg.siteUrl);
   if (!cookies.length) throw new Error('WIX_COOKIES 값에서 쿠키를 읽지 못했습니다. 복사한 값을 다시 확인하세요.');
   log.info(`WIX_COOKIES에서 쿠키 ${cookies.length}개를 불러왔습니다.`);
   state.cookieSecretHash = hash;
