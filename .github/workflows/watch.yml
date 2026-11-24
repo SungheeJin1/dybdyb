@@ -1,0 +1,84 @@
+name: 학생 제출 알림
+
+on:
+  schedule:
+    # GitHub 예약 실행은 UTC 기준입니다(한국 시간 = UTC + 9).
+    # 아래 설정: 한국 시간 07:07 ~ 다음날 00:37, 30분마다 (하루 36회).
+    # 비공개 저장소는 Actions 무료 사용량이 월 2,000분이라, 1회 1분 이내로 잡아 약 1,100분/월입니다.
+    - cron: '7,37 22-23,0-15 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '실행 방식'
+        type: choice
+        default: run
+        options:
+          - run
+          - test-notify
+          - dry-run
+
+concurrency:
+  group: dyb-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci --no-audit --no-fund
+
+      - name: 저장된 상태 불러오기
+        uses: actions/cache/restore@v4
+        with:
+          path: .state
+          key: dyb-watch-state-${{ github.run_id }}
+          restore-keys: dyb-watch-state-
+
+      - name: 학생 피드백 확인
+        env:
+          MODE: ${{ inputs.mode || 'run' }}
+          WIX_EMAIL: ${{ secrets.WIX_EMAIL }}
+          WIX_PASSWORD: ${{ secrets.WIX_PASSWORD }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+          TARGET_NAMES: ${{ secrets.TARGET_NAMES }}
+          STATE_SECRET: ${{ secrets.STATE_SECRET }}
+          NTFY_SERVER: ${{ vars.NTFY_SERVER }}
+          WATCH_STATUSES: ${{ vars.WATCH_STATUSES }}
+          NOTIFY_EXISTING: ${{ vars.NOTIFY_EXISTING }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          # GitHub 실행 환경에 이미 설치된 Chrome을 씁니다(브라우저 다운로드 시간 절약).
+          BROWSER_CHANNEL: chrome
+        run: |
+          case "$MODE" in
+            test-notify) node src/index.js --test-notify ;;
+            dry-run)     node src/index.js --dry-run ;;
+            *)           node src/index.js ;;
+          esac
+
+      - name: 상태 저장
+        if: always() && hashFiles('.state/state.bin') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .state
+          key: dyb-watch-state-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: 실패 화면 저장
+        if: failure() && hashFiles('debug/failure.png') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshot
+          path: debug/failure.png
+          retention-days: 3

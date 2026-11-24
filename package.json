@@ -1,0 +1,19 @@
+{
+  "name": "dyb-feedback-watcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DYB 면접 연습 사이트의 '학생 피드백' 목록을 확인해 지정한 학생이 제출하면 ntfy로 푸시 알림을 보냅니다.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dry-run": "node src/index.js --dry-run",
+    "test-notify": "node src/index.js --test-notify",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "playwright-core": "1.65.1"
+  }
+}
