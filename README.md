@@ -139,6 +139,7 @@ GitHub의 자동 실행은 `main` 브랜치에 있는 설정만 돌립니다.
 | 학생 바꾸기·추가 | **Settings** → **Secrets and variables** → **Actions** → `TARGET_NAMES` 줄 오른쪽 **✏(연필)** → 새 값 입력 → **Update secret** |
 | 로그인 cookie 새로 넣기 | 2-B를 다시 하고 → 같은 화면 `WIX_COOKIES`의 **✏** → 붙여 넣기 → **Update secret** |
 | 다른 검토 상태도 알림 받기 | 같은 화면 **Variables** 탭 → **New repository variable** → Name `WATCH_STATUSES`, Value 예: `SUBMITTED, REVISION_REQUESTED` (전부: `ALL`) → **Add variable** |
+| 알림을 눌렀을 때 여는 주소 바꾸기 | 기본은 Safari로 사이트를 엽니다(`x-safari-https://...`, iOS 17 이상). 다른 주소로 바꾸려면 **Variables** 탭 → **New repository variable** → Name `CLICK_URL`, Value 원하는 주소 → **Add variable** |
 | 잠시 끄기 / 다시 켜기 | **Actions** → **학생 제출 알림** → 오른쪽 위 **⋯** → **Disable workflow** / **Enable workflow** |
 | 확인 시간·간격 바꾸기 | **<> Code** → `.github` → `workflows` → `watch.yml` → 오른쪽 위 **✏(Edit this file)** → `cron:` 줄을 아래 예시로 바꿈 → **Commit changes...** → **Commit changes** |
 

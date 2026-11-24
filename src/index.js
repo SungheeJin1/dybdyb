@@ -32,7 +32,7 @@ async function testNotify(cfg) {
     title: '테스트 알림',
     message: '학생 제출 알림이 이 기기로 잘 도착합니다.',
     tags: ['white_check_mark'],
-    click: cfg.siteUrl,
+    click: cfg.clickUrl,
   });
   log.info('테스트 푸시를 보냈습니다.');
 }
@@ -73,14 +73,14 @@ async function run(cfg, { dryRun, verbose }) {
         message: `대상 ${cfg.targets.length}명 감시를 시작합니다. 지금 목록에 있는 제출 ${matches.length}건은 알림 없이 기록했고, 앞으로 새로 제출하면 알려드립니다.`,
         tags: ['white_check_mark'],
         priority: 3,
-        click: cfg.siteUrl,
+        click: cfg.clickUrl,
       });
     } else if (fresh.length > MAX_SEPARATE_PUSHES) {
-      await sendPush(cfg, formatDigest(fresh, cfg.siteUrl));
+      await sendPush(cfg, formatDigest(fresh, cfg.clickUrl));
       for (const s of fresh) state.seen[submissionKey(s)] = now;
     } else {
       for (const s of fresh) {
-        await sendPush(cfg, formatSubmission(s, cfg.siteUrl));
+        await sendPush(cfg, formatSubmission(s, cfg.clickUrl));
         state.seen[submissionKey(s)] = now; // 보낸 것만 기록 → 실패하면 다음 실행에서 다시 시도
       }
     }
@@ -104,7 +104,7 @@ function startingSession(cfg, state) {
   if (!cfg.cookies) return state.storageState;
   const hash = createHash('sha256').update(cfg.cookies).digest('hex').slice(0, 16);
   if (state.storageState && state.cookieSecretHash === hash) return state.storageState;
-  const cookies = parseCookies(cfg.cookies, cfg.siteUrl);
+  const cookies = parseCookies(cfg.cookies, cfg.clickUrl);
   if (!cookies.length) throw new Error('WIX_COOKIES 값에서 쿠키를 읽지 못했습니다. 복사한 값을 다시 확인하세요.');
   log.info(`WIX_COOKIES에서 쿠키 ${cookies.length}개를 불러왔습니다.`);
   state.cookieSecretHash = hash;
