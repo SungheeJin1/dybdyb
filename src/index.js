@@ -30,7 +30,8 @@ async function testNotify(cfg) {
   if (missing.length) throw new Error(`설정이 비어 있습니다: ${missing.join(', ')}`);
   await sendPush(cfg, {
     title: '테스트 알림',
-    message: '학생 제출 알림이 이 기기로 잘 도착합니다.',
+    // 대상 이름은 Secret이라 GitHub에서 다시 볼 수 없으므로, 확인용으로 폰 알림에만 넣습니다(로그에는 남기지 않음).
+    message: `학생 제출 알림이 이 기기로 잘 도착합니다.\n감시 대상(${cfg.targets.length}명): ${cfg.targets.join(', ') || '없음'}\n검토 상태: ${cfg.statuses.join(', ')}`,
     tags: ['white_check_mark'],
     click: cfg.clickUrl,
   });
