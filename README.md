@@ -136,6 +136,7 @@ GitHub의 자동 실행은 `main` 브랜치에 있는 설정만 돌립니다.
 
 | 하고 싶은 것 | 방법 |
 | --- | --- |
+| 지금 넣어 둔 학생 이름 확인 | Secret 값은 GitHub에서 다시 볼 수 없습니다. **Actions** → **학생 제출 알림** → **Run workflow** → **test-notify**로 실행하면 폰 알림에 감시 대상 이름이 나옵니다 |
 | 학생 바꾸기·추가 | **Settings** → **Secrets and variables** → **Actions** → `TARGET_NAMES` 줄 오른쪽 **✏(연필)** → 새 값 입력 → **Update secret** |
 | 로그인 cookie 새로 넣기 | 2-B를 다시 하고 → 같은 화면 `WIX_COOKIES`의 **✏** → 붙여 넣기 → **Update secret** |
 | 다른 검토 상태도 알림 받기 | 같은 화면 **Variables** 탭 → **New repository variable** → Name `WATCH_STATUSES`, Value 예: `SUBMITTED, REVISION_REQUESTED` (전부: `ALL`) → **Add variable** |
@@ -147,7 +148,7 @@ GitHub의 자동 실행은 `main` 브랜치에 있는 설정만 돌립니다.
 
 | 원하는 것 | `cron:` 줄 |
 | --- | --- |
-| 07–01시, 10분마다 (현재) | `- cron: '3,13,23,33,43,53 22-23,0-15 * * *'` |
+| 07–01시, 10분마다 (현재) | `- cron: '7,17,27,37,47,57 22-23,0-15 * * *'` |
 | 07–01시, 5분마다 (GitHub 최소 간격) | `- cron: '3-58/5 22-23,0-15 * * *'` |
 | 24시간, 10분마다 | `- cron: '3,13,23,33,43,53 * * * *'` |
 
