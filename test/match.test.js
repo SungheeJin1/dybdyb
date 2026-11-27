@@ -77,7 +77,7 @@ test('알림 문구', () => {
   assert.match(n.message, /2026-101 · 1차 · 11월 24일 오전 9:03/);
   assert.match(n.message, /제출 완료\(피드백 대기 중\)/);
   const d = formatDigest(Array(10).fill(subs[0]), 'https://example.com');
-  assert.equal(d.title, '새 제출 10건');
+  assert.equal(d.title, '새 제출 10건 (홍길동)');
   assert.match(d.message, /외 2건/);
 });
 

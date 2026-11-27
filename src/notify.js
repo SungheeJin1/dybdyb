@@ -73,10 +73,10 @@ export function formatSubmission(sub, siteUrl) {
 
 // 한 번에 너무 많으면 묶어서 한 건으로 보냅니다.
 export function formatDigest(subs, siteUrl, max = 8) {
-  const lines = subs.slice(0, max).map((s) => `• ${s.studentName || '학생'} — ${s.title || '(과제명 없음)'}`);
+  const lines = subs.slice(0, max).map((s) => `• ${s.studentName || '학생'} — ${s.title || '(과제명 없음)'} (${formatKoreanTime(s.submittedAt)})`);
   if (subs.length > max) lines.push(`… 외 ${subs.length - max}건`);
   return {
-    title: `새 제출 ${subs.length}건`,
+    title: `새 제출 ${subs.length}건 (${[...new Set(subs.map((s) => s.studentName || '학생'))].join(', ')})`,
     message: lines.join('\n'),
     click: siteUrl,
     tags: ['bell'],
