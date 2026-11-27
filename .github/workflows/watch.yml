@@ -1,11 +1,8 @@
 name: 학생 제출 알림
 
 on:
-  schedule:
-    # GitHub 예약 실행은 UTC 기준입니다(한국 시간 = UTC + 9).
-    # 한국 시간 07:07 ~ 다음날 00:57, 10분마다 (매시 7·17·27·37·47·57분).
-    # 정각은 GitHub 서버가 붐벼 늦어지기 쉬워서 7분씩 비켜 놓았습니다.
-    - cron: '7,17,27,37,47,57 22-23,0-15 * * *'
+  # 실행 시각은 cron-job.org가 정합니다(매일 16:00~00:50 KST, 10분마다 이 워크플로를 실행).
+  # GitHub 자체 예약(schedule)은 이 저장소에서 거의 돌지 않거나 엉뚱한 시각에 돌아서 쓰지 않습니다.
   workflow_dispatch:
     inputs:
       mode:
@@ -23,7 +20,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: write # 예약 실행이 60일 뒤 꺼지지 않게 다시 켜는 데 필요
 
 jobs:
   watch:
@@ -81,14 +77,3 @@ jobs:
           path: .state
           key: dyb-watch-state-${{ github.run_id }}-${{ github.run_attempt }}
 
-      # 공개 저장소의 예약 실행은 저장소에 60일간 변화가 없으면 GitHub가 끕니다.
-      # 매주 월요일 아침에 워크플로를 다시 켜 두어 꺼지지 않게 합니다.
-      - name: 예약 실행 유지
-        if: always() && github.event_name == 'schedule'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [ "$(TZ=Asia/Seoul date +%u%H)" = "107" ]; then
-            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/watch.yml/enable" \
-              && echo "예약 실행 유지 완료" || echo "예약 실행 유지 실패(무시)"
-          fi
