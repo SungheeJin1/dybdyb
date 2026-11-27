@@ -22,8 +22,9 @@ const log = {
   error: (...a) => console.error(new Date().toISOString(), '[오류]', ...a),
 };
 
-// 한 번에 이 개수를 넘으면 묶어서 한 건으로 보냅니다.
-const MAX_SEPARATE_PUSHES = 5;
+// 새 제출이 이 개수를 넘으면 한 알림으로 묶습니다. 폰이 꺼져 있거나 연결이 끊긴 동안 같은 앱 알림이
+// 여러 개 오면 Apple은 마지막 1개만 보관했다가 전달하므로, 여러 건은 반드시 한 알림에 담습니다.
+const MAX_SEPARATE_PUSHES = 1;
 
 async function testNotify(cfg) {
   const missing = missingSettings(cfg, { needSite: false });
