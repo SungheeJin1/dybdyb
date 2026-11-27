@@ -1,6 +1,6 @@
 # DYB 학생 제출 알림
 
-[DYB 면접 연습 사이트](https://consultingdyb.wixstudio.com/interview)의 **학생 피드백** 목록을 한국 시간 07시~01시에 **10분마다** 확인합니다.
+[DYB 면접 연습 사이트](https://consultingdyb.wixstudio.com/interview)의 **학생 피드백** 목록을 매일 한국 시간 16:00~00:50에 **10분마다** 확인합니다.
 지정한 학생이 새로 제출하면 iPhone으로 푸시 알림을 보냅니다.
 
 ```
@@ -126,7 +126,7 @@ GitHub의 자동 실행은 `main` 브랜치에 있는 설정만 돌립니다.
 5. 다시 **Run workflow ▾** → **실행 방식**을 **run**으로 → **Run workflow**. 초록 체크가 뜨고 폰에 **"학생 제출 알림 시작"**이 오면 모두 끝났습니다.
    - 첫 실행에서는 지금 목록에 이미 있는 제출을 알림 없이 기록만 합니다. 그 뒤로 새로 들어오는 제출부터 알립니다.
 
-이제 한국 시간 07:03부터 00:53까지 10분마다 자동으로 확인합니다. 실행 기록은 **Actions** 탭에 쌓입니다.
+실행 시각은 cron-job.org가 정합니다(아래 [실행 시각](#실행-시각-cron-joborg) 참고). 실행 기록은 **Actions** 탭에 쌓입니다.
 
 **빨간 X가 뜨면:** 그 실행을 누릅니다 → 왼쪽 **watch** → **학생 피드백 확인** 줄을 눌러 펼칩니다 → `[오류]`로 시작하는 줄을 아래 [문제 해결](#문제-해결) 표에서 찾습니다.
 
@@ -142,17 +142,17 @@ GitHub의 자동 실행은 `main` 브랜치에 있는 설정만 돌립니다.
 | 다른 검토 상태도 알림 받기 | 같은 화면 **Variables** 탭 → **New repository variable** → Name `WATCH_STATUSES`, Value 예: `SUBMITTED, REVISION_REQUESTED` (전부: `ALL`) → **Add variable** |
 | 알림을 눌렀을 때 여는 주소 바꾸기 | 기본은 Safari로 사이트를 엽니다(`x-safari-https://...`, iOS 17 이상). 다른 주소로 바꾸려면 **Variables** 탭 → **New repository variable** → Name `CLICK_URL`, Value 원하는 주소 → **Add variable** |
 | 잠시 끄기 / 다시 켜기 | **Actions** → **학생 제출 알림** → 오른쪽 위 **⋯** → **Disable workflow** / **Enable workflow** |
-| 확인 시간·간격 바꾸기 | **<> Code** → `.github` → `workflows` → `watch.yml` → 오른쪽 위 **✏(Edit this file)** → `cron:` 줄을 아래 예시로 바꿈 → **Commit changes...** → **Commit changes** |
+| 확인 시간·간격 바꾸기 | cron-job.org → 작업(`dyb 알림`) → **EDIT** → **Execution schedule**의 **Hours** / **Minutes** 선택 바꾸기 → **SAVE** |
 
-`cron` 예시(GitHub는 UTC 기준이라 한국 시간에서 9시간을 뺀 값으로 적습니다):
+### 실행 시각 (cron-job.org)
 
-| 원하는 것 | `cron:` 줄 |
-| --- | --- |
-| 07–01시, 10분마다 (현재) | `- cron: '7,17,27,37,47,57 22-23,0-15 * * *'` |
-| 07–01시, 5분마다 (GitHub 최소 간격) | `- cron: '3-58/5 22-23,0-15 * * *'` |
-| 24시간, 10분마다 | `- cron: '3,13,23,33,43,53 * * * *'` |
+GitHub 자체 예약 기능은 이 저장소에서 거의 돌지 않아서 쓰지 않습니다. 대신 [cron-job.org](https://cron-job.org)가 정해진 시각마다 GitHub에 실행 신호를 보냅니다.
 
-GitHub 자동 실행은 서버가 붐비면 몇 분에서 수십 분 늦게 시작하거나 가끔 한 번씩 건너뜁니다. 정확히 10분이 보장되지는 않습니다.
+- 현재 설정: 매일 16:00~00:50, 10분마다 (Hours: 16~23, 0 / Minutes: 0, 10, 20, 30, 40, 50 / Timezone: Asia/Seoul)
+- 신호 주소: `https://api.github.com/repos/SungheeJin1/dybdyb/actions/workflows/watch.yml/dispatches` (POST)
+- 헤더: `Authorization: Bearer <GitHub fine-grained 토큰, Actions: Read and write>`, `Accept: application/vnd.github+json`, `Content-Type: application/json`
+- 본문: `{"ref":"main","inputs":{"mode":"run"}}`
+- 토큰이 만료되면 실행이 멈춥니다. GitHub **Settings** → **Developer settings** → **Fine-grained tokens**에서 새로 만들어 cron-job.org의 `Authorization` 값을 바꾸세요.
 
 ## 문제 해결
 
@@ -165,10 +165,8 @@ GitHub 자동 실행은 서버가 붐비면 몇 분에서 수십 분 늦게 시�
 | ntfy 전송 실패 | `NTFY_TOPIC`이 1단계에서 구독한 이름과 같은지 확인합니다 |
 | 이 계정에는 학생 피드백 메뉴가 없습니다 | 선생님 계정으로 로그인한 cookie/이메일인지 확인합니다 |
 | 로그인 중 reCAPTCHA 확인 창이 떴습니다 | Wix가 자동 로그인을 의심한 경우입니다(2-A 방식). 반복되면 2-B 방식으로 바꿉니다 |
-| GitHub에서 "scheduled workflow … disabled" 메일이 옴 | **Actions** → **학생 제출 알림** → **Enable workflow** |
 
 - 로그인 실패는 바로, 다른 오류는 2번 연속 나면 폰으로 **"학생 제출 알림 오류"** 알림이 옵니다. 오류가 계속되는 동안에는 6시간에 한 번만 알립니다.
-- 공개 저장소는 60일 동안 변화가 없으면 GitHub가 자동 실행을 끕니다. 그래서 매주 월요일 아침에 자동으로 다시 켜 두도록 해 놓았습니다. 그래도 꺼졌다는 메일이 오면 위 표대로 **Enable workflow**를 누르세요.
 
 ---
 
