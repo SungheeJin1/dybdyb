@@ -54,11 +54,18 @@ async function run(cfg, { dryRun, verbose }) {
   if (skipPasswordLogin) log.warn('지난번에 틀린 이메일/비밀번호라 이번에는 이메일 로그인을 시도하지 않습니다. Secret을 고치면 다시 시도합니다.');
 
   try {
-    const { submissions, storageState } = await fetchSubmissions(siteCfg, {
-      storageState: startingSession(cfg, state),
-      log,
-      debugDir: 'debug',
-    });
+    const fetchOnce = () => fetchSubmissions(siteCfg, { storageState: startingSession(cfg, state), log, debugDir: 'debug' });
+    let result;
+    try {
+      result = await fetchOnce();
+    } catch (err) {
+      // 사이트가 잠깐 로그아웃 상태처럼 보이는 경우가 있어, WIX_COOKIES 원본으로 한 번 더 시도합니다.
+      if (!(err instanceof LoginError) || err.badCredentials || !cfg.cookies) throw err;
+      log.warn('로그인 상태 확인에 실패해 WIX_COOKIES로 한 번 더 시도합니다.');
+      state.storageState = null;
+      result = await fetchOnce();
+    }
+    const { submissions, storageState } = result;
     state.storageState = storageState;
 
     const matches = selectMatches(submissions, cfg);
@@ -123,11 +130,12 @@ function startingSession(cfg, state) {
   return { cookies, origins: [] };
 }
 
-// 일시적인 오류 한 번으로는 알리지 않고, 로그인 실패이거나 2번 연속 실패하면 알립니다.
+// 일시적인 오류 한 번으로는 알리지 않습니다.
 // 계속 실패하는 동안에는 몇 시간(ERROR_NOTIFY_HOURS)에 한 번만 알립니다.
 async function notifyErrorThrottled(cfg, state, err, now) {
   if (!cfg.ntfy.topic && !cfg.bark.key) return;
-  if (!(err instanceof LoginError) && state.failures < 2) return;
+  // 틀린 비밀번호만 바로 알리고, 나머지(로그인 풀림 포함)는 2번 연속(약 20분) 실패해야 알립니다.
+  if (!(err instanceof LoginError && err.badCredentials) && state.failures < 2) return;
   const last = state.lastErrorNotifiedAt ? Date.parse(state.lastErrorNotifiedAt) : 0;
   if (Date.now() - last < cfg.errorNotifyHours * 3600 * 1000) return;
   try {

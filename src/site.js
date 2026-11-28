@@ -46,6 +46,9 @@ function collectAdminList(page) {
     waiters.clear();
   });
   return {
+    reset() {
+      latest = null;
+    },
     get latest() {
       return latest;
     },
@@ -217,12 +220,22 @@ export async function fetchSubmissions(cfg, { storageState = null, log = console
       await app.locator(SEL.navFeedback).click().catch(() => {});
       result = await adminList.wait(30000);
     }
-    if (!result) throw new Error('학생 피드백 목록을 불러오지 못했습니다(시간 초과).');
-    if (result.status >= 400) {
-      throw new Error(`학생 피드백 목록 요청이 실패했습니다(HTTP ${result.status}).`);
+    // 가끔 사이트가 목록 없이 응답하는 경우가 있어, 한 번은 '학생 피드백'을 다시 눌러 재시도합니다.
+    let submissions;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        if (!result) throw new Error('학생 피드백 목록을 불러오지 못했습니다(시간 초과).');
+        if (result.status >= 400) throw new Error(`학생 피드백 목록 요청이 실패했습니다(HTTP ${result.status}).`);
+        submissions = extractSubmissions(result.body);
+        break;
+      } catch (err) {
+        if (attempt >= 2) throw err;
+        log.warn(`목록 응답이 이상해 다시 불러옵니다: ${err.message}`);
+        adminList.reset();
+        await app.locator(SEL.navFeedback).click().catch(() => {});
+        result = await adminList.wait(30000);
+      }
     }
-
-    const submissions = extractSubmissions(result.body);
     return { submissions, storageState: await context.storageState(), loggedInFresh };
   } catch (err) {
     if (debugDir && page) {
